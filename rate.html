@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NopNop | Visitor & User</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .message { background:#fff;padding:15px;margin:15px auto;border-radius:10px;max-width:900px;box-shadow:0 3px 10px rgba(0,0,0,0.1); }
+    .message img { max-width:100%;border-radius:10px;margin-top:10px; }
+    .meta { font-size:13px;color:#666;margin-bottom:8px; }
+    .btn { background:#2563eb;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer; }
+    .btn.small { font-size:12px;padding:5px 10px; }
+    .btn.danger { background:#dc2626; }
+    .btn.secondary { background:#6b7280; }
+    .reply { background:#f9fafb;border-left:3px solid #3b82f6;margin-top:8px;padding:8px;border-radius:6px; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="highlight">NopNop Visitor</h1>
+      <nav>
+        <ul class="nav">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="picture.html">Pictures</a></li>
+          <li class="current"><a href="rate.html">Visitor</a></li>
+          <li><a id="loginBtn" href="login.html" class="btn small secondary">Login</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="composer" class="box">
+      <h3>Kirim Pesan</h3>
+      <input id="displayName" placeholder="Nama (opsional)" />
+      <textarea id="messageText" rows="3" placeholder="Tulis pesan..."></textarea>
+
+      <div id="uploadControls" style="display:none;margin-top:10px;">
+        <label>Upload dari perangkat:</label>
+        <input id="fileInput" type="file" accept="image/*" />
+        <div style="text-align:center;margin:8px 0">— atau —</div>
+        <input id="urlInput" placeholder="Tempel URL gambar (Google Drive / link langsung)" />
+        <p style="font-size:13px;color:#666;">User trial hanya bisa upload 2 foto.</p>
+      </div>
+
+      <button id="sendBtn" class="btn" style="margin-top:10px;">Kirim</button>
+    </section>
+
+    <section id="messages"></section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Dibuat oleh: Arkan Naymar Aji • © 2025</p>
+  </footer>
+
+  <script type="module" src="js/firebase.js"></script>
+  <script type="module">
+    import {
+      getSessionUser, canUserUpload, recordUserUpload,
+      pushMessage, onMessagesValue, deleteMessage, pushReply,
+      uploadFileToStorage
+    } from './js/firebase.js';
+
+    const currentUser = await getSessionUser();
+    const uploadControls = document.getElementById('uploadControls');
+    const fileInput = document.getElementById('fileInput');
+    const urlInput = document.getElementById('urlInput');
+    const displayNameEl = document.getElementById('displayName');
+    const messageText = document.getElementById('messageText');
+    const sendBtn = document.getElementById('sendBtn');
+    const messagesContainer = document.getElementById('messages');
+
+    if (currentUser && currentUser.username !== 'visitor') {
+      uploadControls.style.display = 'block';
+      document.getElementById('loginBtn').textContent = currentUser.username + ' (Logout)';
+      document.getElementById('loginBtn').href = 'logout.html';
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      const nama = (displayNameEl.value || 'Anonim').trim();
+      const pesan = messageText.value.trim();
+      if (!pesan) return alert('Pesan kosong.');
+
+      let fotoURL = '';
+      if (currentUser && currentUser.role !== 'visitor') {
+        const file = fileInput.files[0];
+        const url = urlInput.value.trim();
+        const quota = await canUserUpload(currentUser.username, currentUser.role);
+        if ((file || url) && !quota.allowed) return alert('Batas upload trial tercapai.');
+
+        if (file) {
+          const path = `uploads/${currentUser.username}/${Date.now()}_${file.name}`;
+          fotoURL = await uploadFileToStorage(path, file);
+          await recordUserUpload(currentUser.username);
+        } else if (url) {
+          fotoURL = url;
+          await recordUserUpload(currentUser.username);
+        }
+      }
+
+      await pushMessage({
+        nama,
+        pesan,
+        foto: fotoURL,
+        waktu: new Date().toLocaleString(),
+        user: currentUser.username || 'visitor'
+      });
+      messageText.value = '';
+      fileInput.value = '';
+      urlInput.value = '';
+    });
+
+    onMessagesValue((messages) => {
+      messagesContainer.innerHTML = '';
+      if (!messages) return;
+
+      Object.entries(messages).reverse().forEach(([key, msg]) => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.innerHTML = `
+          <div class="meta"><strong>${msg.nama}</strong> • ${msg.waktu} • <span style="font-size:12px;">@${msg.user}</span></div>
+          <div>${msg.pesan}</div>
+          ${msg.foto ? `<img src="${msg.foto}" alt="foto">` : ''}
+          <div class="actions"></div>
+          <div id="replies-${key}"></div>
+        `;
+
+        const act = div.querySelector('.actions');
+        if (['admin', 'proplus'].includes(currentUser.role)) {
+          const replyBtn = document.createElement('button');
+          replyBtn.className = 'btn small secondary';
+          replyBtn.textContent = 'Balas';
+          replyBtn.onclick = async () => {
+            const teks = prompt('Tulis balasan:');
+            if (teks) await pushReply(key, { user: currentUser.username, teks, waktu: new Date().toLocaleString() });
+          };
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn small danger';
+          delBtn.textContent = 'Hapus';
+          delBtn.onclick = async () => {
+            if (confirm('Hapus pesan ini?')) await deleteMessage(key);
+          };
+
+          act.append(replyBtn, delBtn);
+        }
+
+        if (msg.replies) {
+          const replyWrap = div.querySelector(`#replies-${key}`);
+          for (const rid in msg.replies) {
+            const r = msg.replies[rid];
+            const rEl = document.createElement('div');
+            rEl.className = 'reply';
+            rEl.innerHTML = `<strong>${r.user}</strong> • ${r.waktu}<br>${r.teks}`;
+            replyWrap.appendChild(rEl);
+          }
+        }
+
+        messagesContainer.appendChild(div);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login NopNop</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<section class="box" style="max-width:400px;margin:50px auto;">
+  <h2>Login</h2>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button id="loginBtn" class="btn">Login</button>
+  <p id="loginMsg" class="small"></p>
+</section>
+
+<script type="module">
+import { db, getUserByUsername } from './js/firebase.js';
+
+const usernameEl = document.getElementById('username');
+const passwordEl = document.getElementById('password');
+const loginBtn = document.getElementById('loginBtn');
+const loginMsg = document.getElementById('loginMsg');
+
+loginBtn.addEventListener('click', async()=>{
+  const username=usernameEl.value.trim();
+  const password=passwordEl.value.trim();
+  if(username==='Adminweb' && password==='Admin@web'){
+    localStorage.setItem('nopUser', JSON.stringify({username:'Adminweb',role:'admin'}));
+    location.href='admin.html';
+    return;
+  }
+  const userRec = await getUserByUsername(username);
+  if(!userRec){loginMsg.textContent='User tidak ditemukan';return;}
+  if(userRec.password!==password){loginMsg.textContent='Password salah';return;}
+  localStorage.setItem('nopUser', JSON.stringify({username:userRec.username,role:userRec.role}));
+  location.href='rate.html';
+});
+</script>
+</body>
+</html>

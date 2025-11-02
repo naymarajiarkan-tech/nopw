@@ -1,0 +1,69 @@
+/* ===== Universal Style for NopNop Collection ===== */
+* { box-sizing: border-box; }
+html,body { height:100%; margin:0; padding:0; font-family: "Inter", system-ui, Arial, Helvetica, sans-serif; background:#f4f6fb; color:#111827; -webkit-font-smoothing:antialiased; }
+
+/* Container */
+.container { width:92%; max-width:1100px; margin:0 auto; }
+
+/* Header */
+.site-header { background: linear-gradient(90deg,#35424a,#2b6cb0); color:#fff; position:sticky; top:0; z-index:40; box-shadow:0 4px 16px rgba(2,6,23,0.12); }
+.header-inner { display:flex; align-items:center; justify-content:space-between; padding:14px 0; }
+#branding h1 { margin:0; font-size:1.4rem; letter-spacing:0.4px; }
+.highlight { color:#e8491d; font-weight:700; }
+
+/* Nav */
+.nav { display:flex; gap:18px; margin:0; padding:0; list-style:none; }
+.nav-item a { color: rgba(255,255,255,0.95); text-decoration:none; font-weight:600; text-transform:uppercase; font-size:0.85rem; opacity:0.95; }
+.nav-item.current a { border-bottom:3px solid #e8491d; padding-bottom:6px; }
+
+/* Showcase */
+.showcase { padding:60px 0; text-align:center; background:linear-gradient(180deg, rgba(59,130,246,0.06), rgba(99,102,241,0.02)); border-bottom-left-radius:14px; border-bottom-right-radius:14px; }
+.showcase h1 { font-size:2rem; margin:0 0 10px 0; }
+.showcase p { margin:0; color:#475569; }
+
+/* Boxes / Cards */
+.boxes { display:flex; gap:18px; margin:36px auto 40px auto; flex-wrap:wrap; justify-content:space-between; }
+.box { background:#fff; width:32%; min-width:240px; border-radius:12px; padding:18px; text-align:center; box-shadow:0 6px 20px rgba(2,6,23,0.06); transition:transform .18s ease, box-shadow .18s ease; }
+.box img { width:100%; height:260px; object-fit:cover; border-radius:5px; }
+.box h3 { margin:12px 0 8px 0; }
+.box p { color:#6b7280; font-size:0.95rem; }
+.box:hover { transform:translateY(-6px); box-shadow:0 10px 30px rgba(2,6,23,0.08); }
+
+/* Gallery */
+.gallery-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; padding:28px 0; }
+.gallery-item img { width:100%; height:250px; object-fit:cover; border-radius:5px; box-shadow:0 6px 18px rgba(2,6,23,0.06); }
+.gallery-item figcaption { text-align:center; margin-top:8px; color:#475569; }
+
+/* Forms & Inputs */
+input[type="text"], input[type="password"], input[type="email"], textarea, select {
+  width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6eef6; background:#fff; outline:none; font-size:0.95rem;
+}
+textarea { min-height:90px; resize:vertical; }
+input[type="file"] { padding:6px 4px; }
+
+/* Buttons */
+.btn, .button_1 {
+  display:inline-block; padding:10px 16px; border-radius:10px; border:0; cursor:pointer; font-weight:700;
+  background:linear-gradient(90deg,#e8491d,#f97316); color:#fff; box-shadow:0 6px 18px rgba(232,73,29,0.12); transition:transform .12s ease;
+}
+.btn.secondary { background:#64748b; box-shadow:none; }
+.btn:hover, .button_1:hover { transform:translateY(-3px); }
+
+/* Messages & Admin */
+.message { background:#fff; padding:14px; border-radius:10px; margin:14px auto; box-shadow:0 6px 18px rgba(2,6,23,0.04); }
+.message .meta { color:#6b7280; font-size:0.85rem; margin-bottom:8px; }
+.message img { max-width:100%; border-radius:8px; margin-top:10px; }
+
+/* Footer */
+.site-footer { background:#111827; color:#f8fafc; padding:18px 0; text-align:center; margin-top:36px; }
+
+/* Utilities */
+.small { font-size:0.85rem; color:#6b7280; }
+.hint { color:#6b7280; font-size:0.9rem; }
+
+/* Responsive */
+@media (max-width:900px) {
+  .boxes { flex-direction:column; align-items:center; }
+  .box { width:95%; }
+  .header-inner { flex-direction:column; gap:8px; text-align:center; }
+}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin NopNop</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>Admin Panel</h1>
+  <a href="login.html" class="btn">Logout</a>
+</header>
+
+<main>
+<!-- Tambah User -->
+<section id="createUser" class="box">
+  <h3>Tambah User</h3>
+  <input id="newUserName" placeholder="Username">
+  <input id="newUserPass" placeholder="Password">
+  <select id="newUserRole">
+    <option value="trial">Trial</option>
+    <option value="pro">Pro</option>
+    <option value="proplus">Pro+</option>
+  </select>
+  <button id="createUserBtn" class="btn">Buat</button>
+</section>
+
+<!-- Daftar User -->
+<section id="userList" class="box">
+  <h3>Daftar User</h3>
+  <div id="usersContainer"></div>
+</section>
+
+<!-- Pesan -->
+<section id="messages" class="box">
+  <h3>Pesan</h3>
+  <div id="messagesContainer"></div>
+</section>
+</main>
+
+<script type="module">
+import { 
+  listenUsers, createUserRecord, deleteUserRecord, updateUserRecord, 
+  onMessagesValue, deleteMessage, pushReply 
+} from './js/firebase.js';
+
+// UI refs
+const usersContainer = document.getElementById('usersContainer');
+const messagesContainer = document.getElementById('messagesContainer');
+const createUserBtn = document.getElementById('createUserBtn');
+
+// Tambah User
+createUserBtn.addEventListener('click', async()=>{
+  const uname = document.getElementById('newUserName').value.trim();
+  const pwd = document.getElementById('newUserPass').value.trim();
+  const role = document.getElementById('newUserRole').value;
+  if(!uname || !pwd) return alert('Isi username & password');
+  await createUserRecord({username:uname,password:pwd,role,uploadsCount:0});
+  alert('User dibuat: '+uname);
+});
+
+// Listen daftar user
+listenUsers(users=>{
+  usersContainer.innerHTML='';
+  for(const key in users){
+    const u = users[key];
+    const div = document.createElement('div');
+    div.style.display='flex'; div.style.justifyContent='space-between'; div.style.alignItems='center'; div.style.marginBottom='6px';
+    div.innerHTML=`<div><strong>${u.username}</strong> • ${u.role} • uploads:${u.uploadsCount||0}</div>`;
+    
+    const btnSetPro = document.createElement('button'); btnSetPro.textContent='Set Pro'; btnSetPro.className='btn';
+    btnSetPro.onclick=()=>updateUserRecord(u.username,{role:'pro'});
+    const btnSetTrial = document.createElement('button'); btnSetTrial.textContent='Set Trial'; btnSetTrial.className='btn';
+    btnSetTrial.onclick=()=>updateUserRecord(u.username,{role:'trial',uploadsCount:0});
+    const btnDel = document.createElement('button'); btnDel.textContent='Hapus'; btnDel.className='btn';
+    btnDel.onclick=()=>{if(confirm('Hapus user?')) deleteUserRecord(u.username);}
+    
+    const actionDiv = document.createElement('div');
+    actionDiv.appendChild(btnSetPro); actionDiv.appendChild(btnSetTrial); actionDiv.appendChild(btnDel);
+    div.appendChild(actionDiv);
+    
+    usersContainer.appendChild(div);
+  }
+});
+
+// Listen pesan
+onMessagesValue(messages=>{
+  messagesContainer.innerHTML='';
+  if(!messages) return;
+  Object.keys(messages).reverse().forEach(key=>{
+    const msg = messages[key];
+    const div = document.createElement('div');
+    div.style.border='1px solid #ccc'; div.style.padding='8px'; div.style.marginBottom='6px';
+    div.innerHTML=`<strong>${msg.nama}</strong> • ${msg.waktu}<p>${msg.pesan}</p>${msg.foto?`<img src="${msg.foto}" style="max-width:200px"/>`:''}`;
+    
+    // Hapus pesan
+    const btnDelMsg = document.createElement('button'); btnDelMsg.textContent='Hapus'; btnDelMsg.className='btn';
+    btnDelMsg.onclick=()=>{if(confirm('Hapus pesan?')) deleteMessage(key);}
+    
+    // Balas pesan (admin/pro+)
+    const btnReply = document.createElement('button'); btnReply.textContent='Balas'; btnReply.className='btn';
+    btnReply.onclick=async()=>{
+      const teks = prompt('Tulis balasan:');
+      if(teks) await pushReply(key,{user:'admin',teks,waktu:new Date().toLocaleString()});
+    }
+    
+    const actionDiv = document.createElement('div');
+    actionDiv.style.marginTop='6px';
+    actionDiv.appendChild(btnReply); actionDiv.appendChild(btnDelMsg);
+    
+    div.appendChild(actionDiv);
+    
+    // tampilkan balasan jika ada
+    if(msg.replies){
+      for(const rkey in msg.replies){
+        const r = msg.replies[rkey];
+        const rDiv = document.createElement('div');
+        rDiv.style.marginLeft='12px'; rDiv.style.background='#f0f0f0'; rDiv.style.padding='4px';
+        rDiv.innerHTML=`<strong>${r.user}</strong> • ${r.waktu}<p>${r.teks}</p>`;
+        div.appendChild(rDiv);
+      }
+    }
+    
+    messagesContainer.appendChild(div);
+  });
+});
+</script>
+</body>
+</html>
